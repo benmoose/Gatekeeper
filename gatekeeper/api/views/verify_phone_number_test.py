@@ -75,4 +75,4 @@ def test_verify_phone_number(verification_code):
 def make_request(data):
     client = Client()
     url = reverse(verify_phone_number)
-    return client.post(url, data)
+    return client.post(url, data, content_type="application/json")

@@ -3,19 +3,19 @@ from string import digits
 from typing import Optional, Tuple
 
 from django.db import IntegrityError, transaction
+from django.conf import settings
 from django.http import HttpResponse
-from django.urls import reverse
 from django.views.decorators.http import require_POST
 from phonenumbers import PhoneNumberFormat, format_number, parse
 
 from common.generate import generate_verification_code
 from common.model import data_model
 from common.response import error_response, success_response
+from common.parse import safe_parse_json
 from common.time import get_current_utc_time
 from coms.providers import get_communication_provider
 from db.models import VerificationCode
 from db.verification import create_verification_code, invalidate_verification_code
-from webhook.twilio_views.message_status import message_status_webhook
 
 FIVE_MINUTES = 5 * 60
 
@@ -32,7 +32,7 @@ class RequestData:
 
 @require_POST
 def send_verification_code(request) -> HttpResponse:
-    request_data = get_request_data(request.POST)
+    request_data = get_request_data(request.body)
     if request_data is None:
         return error_response()
 
@@ -46,7 +46,7 @@ def send_verification_code(request) -> HttpResponse:
     )
 
     provider = get_communication_provider()
-    message_status_callback = reverse(message_status_webhook)
+    message_status_callback = settings.TWILIO_MESSAGE_STATUS_CALLBACK
     success, verification_code = send_verification_code_sms(
         provider=provider,
         phone_number=phone_number,
@@ -63,9 +63,9 @@ def send_verification_code(request) -> HttpResponse:
     return success_response({"phone_number": phone_number})
 
 
-def get_request_data(request_body: dict) -> Optional[RequestData]:
+def get_request_data(request_body: bytes) -> Optional[RequestData]:
     try:
-        return RequestData.from_dict(request_body)
+        return RequestData.from_dict(safe_parse_json(request_body))
     except TypeError:
         return None
 

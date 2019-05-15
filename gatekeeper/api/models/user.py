@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 from common.model import data_model
-from db.user import create_user
+from db.user import get_or_create_user
 
 
 @data_model
@@ -25,7 +25,7 @@ class User:
 
 @pytest.mark.django_db
 def test_user_model():
-    db_user = create_user("+447000000000")
+    db_user = get_or_create_user("+447000000000")
     user = User.from_db_model(db_user)
 
     assert db_user.user_id == user.user_id

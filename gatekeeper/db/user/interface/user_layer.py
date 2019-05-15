@@ -15,15 +15,18 @@ def get_user_by_user_id(user_id: str) -> Optional[User]:
         return None
 
 
-def create_user(
+def get_or_create_user(
     phone_number: str, full_name: str = "", short_name: str = "", picture: str = ""
 ):
-    return User.objects.create(
+    user, _ = User.objects.get_or_create(
         phone_number=phone_number,
-        full_name=full_name,
-        short_name=short_name,
-        picture=picture,
+        defaults=dict(
+            full_name=full_name,
+            short_name=short_name,
+            picture=picture,
+        ),
     )
+    return user
 
 
 def set_user_as_inactive(user: User):

@@ -2,7 +2,7 @@ import pytest
 from django.db import IntegrityError
 
 from ..models.user import User
-from .user_layer import create_user, set_user_as_active, set_user_as_inactive
+from .user_layer import get_or_create_user, set_user_as_active, set_user_as_inactive
 
 
 def assert_rows_in_db(expected):
@@ -11,19 +11,19 @@ def assert_rows_in_db(expected):
 
 @pytest.fixture
 def user():
-    return create_user("test-user", "+447101010101")
+    return get_or_create_user("test-user", "+447101010101")
 
 
 @pytest.mark.django_db(transaction=True)
-def test_create_user():
+def test_get_or_create_user():
     assert_rows_in_db(0)
-    user = create_user("+447000000000")
+    user = get_or_create_user("+447000000000")
     assert_rows_in_db(1)
     assert "+447000000000" == user.phone_number
     assert "gatekeeper:" in user.user_id
 
-    with pytest.raises(IntegrityError):
-        create_user("+447000000000")
+    assert user == get_or_create_user("+447000000000")
+    assert_rows_in_db(1)
 
 
 @pytest.mark.django_db

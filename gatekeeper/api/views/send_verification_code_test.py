@@ -14,16 +14,6 @@ from db.verification import create_verification_code
 from .send_verification_code import send_verification_code, send_verification_code_sms
 
 
-@pytest.fixture(scope="module")
-def api_client():
-    return Client()
-
-
-@pytest.fixture
-def url():
-    return reverse(send_verification_code)
-
-
 @pytest.mark.parametrize(
     "request_data",
     [
@@ -35,14 +25,16 @@ def url():
         {"phone_number": "07000000000", "region": "FOO"},
     ],
 )
-def test_send_verification_code_bad_request(api_client, url, request_data):
-    response = api_client.post(url, data=request_data)
+def test_send_verification_code_bad_request(request_data):
+    response = make_request(data=request_data)
     assert 400 == response.status_code
 
 
 @pytest.mark.django_db
-def test_send_verification_code(api_client, url):
-    response = api_client.post(url, {"phone_number": "07000000000", "region": "gb"})
+def test_send_verification_code(settings):
+    settings.TWILIO_MESSAGE_STATUS_CALLBACK = "/callback/"
+
+    response = make_request({"phone_number": "07000000000", "region": "gb"})
 
     assert 200 == response.status_code
     assert b'{"phone_number": "+447000000000"}' == response.content
@@ -53,7 +45,7 @@ def test_send_verification_code(api_client, url):
     phone_number, message, callback = sent_sms_messages[0]
     assert "+447000000000" == phone_number
     assert "Your verification code is " in message
-    assert "/webhook/message-status/" == callback
+    assert "/callback/" == callback
 
     assert 1 == len(VerificationCode.objects.all())
     verification_code = VerificationCode.objects.first()
@@ -79,3 +71,9 @@ def test_send_verification_code_sms_max_retries_reached():
     assert False is success
     assert None is verification_code
     assert 1 == len(VerificationCode.objects.all())
+
+
+def make_request(data):
+    client = Client()
+    url = reverse(send_verification_code)
+    return client.post(url, data, content_type="application/json")

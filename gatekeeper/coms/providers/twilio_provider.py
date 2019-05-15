@@ -33,7 +33,8 @@ class TwilioProvider(BaseProvider):
             to=to_number,
             body=message,
             status_callback=status_callback,
-            messaging_service_sid=self.messaging_service_sid,
+            # messaging_service_sid=self.messaging_service_sid,
+            from_="+442033222663",
         )
         logger.info(
             f"sending verification SMS to number ending {last_3_digits}: status {result.status}"
