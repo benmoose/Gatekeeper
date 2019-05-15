@@ -1,26 +1,35 @@
+import json
 from datetime import datetime, timedelta
 
 import pytest
-import pytz
+from django.conf import settings
 from django.test import Client
 from django.urls import reverse
 
-import api
-from common.test import mock_current_time
-from db_layer.models import User, VerificationCode
-from db_layer.verification import create_verification_code
+from db.models import User, VerificationCode
 
 from .verify_phone_number import verify_phone_number
 
 
 @pytest.fixture
-def expiry_time() -> datetime:
-    return datetime(2019, 1, 1, tzinfo=pytz.UTC)
+def test_time() -> datetime:
+    return settings.TEST_CURRENT_TIME
 
 
 @pytest.fixture
-def verification_code(expiry_time) -> VerificationCode:
-    return create_verification_code("+447000000000", "abcd", expiry_time)
+def verification_code(test_time) -> VerificationCode:
+    expiry_time = test_time + timedelta(minutes=5)
+    return VerificationCode(
+        phone_number="+447000000000", code="abcd", expires_at=expiry_time
+    )
+
+
+@pytest.fixture
+def verification_code_expired(test_time) -> VerificationCode:
+    expiry_time = test_time - timedelta(minutes=5)
+    return VerificationCode(
+        phone_number="+447000000000", code="abcd", expires_at=expiry_time
+    )
 
 
 @pytest.mark.parametrize(
@@ -41,18 +50,26 @@ def test_verify_phone_number_bad_request(request_data, expected_message):
 
 
 @pytest.mark.django_db
-def test_verify_phone_number(expiry_time, verification_code):
+def test_verify_phone_number(verification_code):
+    verification_code.save()
+
     assert 0 == len(User.objects.all())
-
-    mock_time = expiry_time - timedelta(minutes=5)
-    with mock_current_time(api.views.verify_phone_number, mock_time):
-        response = make_request(
-            {"phone_number": "+447000000000", "verification_code": "abcd"}
-        )
-
+    response = make_request(
+        {"phone_number": "+447000000000", "verification_code": "abcd"}
+    )
     assert 200 == response.status_code
     assert 1 == len(User.objects.all())
     assert "+447000000000" == User.objects.first().phone_number
+    response_data = json.loads(response.content)
+    assert {
+        "user_id",
+        "phone_number",
+        "created_on",
+        "modified_on",
+    } == response_data.keys()
+    assert "+447000000000" == response_data["phone_number"]
+    user = User.objects.all()[0]
+    assert user.user_id == response_data["user_id"]
 
 
 def make_request(data):

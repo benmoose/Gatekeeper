@@ -8,8 +8,8 @@ from django.urls import reverse
 
 from coms.providers import get_communication_provider
 from coms.providers.mock_provider import MockProvider
-from db_layer.models import VerificationCode
-from db_layer.verification import create_verification_code
+from db.models import VerificationCode
+from db.verification import create_verification_code
 
 from .send_verification_code import send_verification_code, send_verification_code_sms
 

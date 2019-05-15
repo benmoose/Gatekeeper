@@ -1,6 +1,6 @@
 from django.db import models
 
-from db_layer.model_base import ModelBase
+from db.model_base import ModelBase
 
 
 class VerificationCode(ModelBase):

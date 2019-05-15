@@ -83,7 +83,7 @@ DEBUG = IS_DEV_ENVIRONMENT
 
 # Application definition
 
-PROJECT_APPS = ["db_layer"]
+PROJECT_APPS = ["db"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -195,6 +195,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = "/static/"
+
+
+# For tests that involve current time
+if IS_TEST_ENVIRONMENT:
+    from datetime import datetime
+
+    import pytz
+
+    TEST_CURRENT_TIME = datetime(2020, 1, 1, tzinfo=pytz.UTC)
 
 
 # CORS

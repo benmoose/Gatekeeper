@@ -1,7 +1,7 @@
 from django.db import models
 
 from common.generate import generate_id
-from db_layer.model_base import ModelBase
+from db.model_base import ModelBase
 
 USER_ID_PREFIX = "gatekeeper"
 

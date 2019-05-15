@@ -1,5 +1,7 @@
 from django.http import HttpResponse, JsonResponse
 
+from .serialize import DataModelSerializer
+
 HTTP_200_OK = 200
 HTTP_400_BAD_REQUEST = 400
 
@@ -15,7 +17,9 @@ def success_response(data=None, status=HTTP_200_OK) -> HttpResponse:
     >>> success_response(status=201).status_code
     201
     """
-    return JsonResponse(data=data, status=status, safe=False)
+    return JsonResponse(
+        data=data, status=status, safe=False, encoder=DataModelSerializer
+    )
 
 
 def error_response(message: str = None, status=HTTP_400_BAD_REQUEST) -> HttpResponse:

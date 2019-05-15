@@ -13,8 +13,8 @@ from common.model import data_model
 from common.response import error_response, success_response
 from common.time import get_current_utc_time
 from coms.providers import get_communication_provider
-from db_layer.models import VerificationCode
-from db_layer.verification import create_verification_code, invalidate_verification_code
+from db.models import VerificationCode
+from db.verification import create_verification_code, invalidate_verification_code
 from webhook.twilio_views.message_status import message_status_webhook
 
 FIVE_MINUTES = 5 * 60
