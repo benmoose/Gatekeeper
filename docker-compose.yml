@@ -18,9 +18,6 @@ services:
       - "DB_USER=postgres"
       - "DB_PASSWORD="
       - "DB_HOST=db"
-      - "TWILIO_ACCOUNT_SID=ACdc5a9a02adbd2c1802aeccc8ef9eb29b"
-      - "TWILIO_AUTH_TOKEN=c6d3ee2a8b198aba00ce4c6f4c01daae"
-      - "TWILIO_MESSAGING_SERVICE_SID=MGe3df4ea2e1ff2af9ba53f21b99c89d3b"
     depends_on:
       - db
 

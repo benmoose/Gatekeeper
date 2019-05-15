@@ -72,6 +72,17 @@ def test_verify_phone_number(verification_code):
     assert user.user_id == response_data["user_id"]
 
 
+@pytest.mark.django_db
+def test_verify_phone_number_idempotent(verification_code):
+    verification_code.save()
+
+    assert 0 == len(User.objects.all())
+    make_request({"phone_number": "+447000000000", "verification_code": "abcd"})
+    assert 1 == len(User.objects.all())
+    make_request({"phone_number": "+447000000000", "verification_code": "abcd"})
+    assert 1 == len(User.objects.all())
+
+
 def make_request(data):
     client = Client()
     url = reverse(verify_phone_number)

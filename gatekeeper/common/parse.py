@@ -1,5 +1,5 @@
 import json
-from typing import Optional, AnyStr
+from typing import AnyStr, Optional
 
 
 def safe_parse_json(json_string: AnyStr) -> Optional[dict]:

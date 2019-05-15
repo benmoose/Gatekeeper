@@ -20,11 +20,7 @@ def get_or_create_user(
 ):
     user, _ = User.objects.get_or_create(
         phone_number=phone_number,
-        defaults=dict(
-            full_name=full_name,
-            short_name=short_name,
-            picture=picture,
-        ),
+        defaults=dict(full_name=full_name, short_name=short_name, picture=picture),
     )
     return user
 
