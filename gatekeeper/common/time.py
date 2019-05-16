@@ -30,3 +30,9 @@ def to_timestamp(dt: datetime) -> int:
     if dt.tzinfo is None:
         raise ValueError("Cannot generate timestamps from naive datetimes")
     return int(dt.timestamp())
+
+
+def from_timestamp(timestamp: int) -> datetime:
+    """
+    """
+    return datetime.fromtimestamp(timestamp, tz=pytz.UTC)

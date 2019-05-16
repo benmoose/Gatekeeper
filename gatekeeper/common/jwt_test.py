@@ -11,7 +11,10 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from common.time import to_timestamp
 from db.user import get_or_create_user
 
-from .jwt import generate_access_token_for_user
+from .jwt import (
+    generate_access_token_from_refresh_token,
+    generate_refresh_token_for_user,
+)
 
 
 @pytest.fixture
@@ -25,25 +28,53 @@ def user():
 
 
 @pytest.mark.django_db
-def test_generate_access_token_for_user(settings, tmp_path, current_time, user):
+def test_generate_refresh_token_for_user(settings, tmp_path, current_time, user):
     private_key_path = tmp_path / "private-key.pem"
-    public_key, private_key = create_public_private_key_pair()
 
     settings.AUTH_PRIVATE_KEY_PATH = private_key_path
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
     settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
 
+    public_key, private_key = create_public_private_key_pair()
     with open(private_key_path, "wb") as f:
         f.write(private_key_to_bytes(private_key))
 
-    token = generate_access_token_for_user(user, current_time)
-    assert {"typ": "JWT", "alg": "RS256"} == jwt.get_unverified_header(token)
+    refresh_token = generate_refresh_token_for_user(user, current_time)
+    assert isinstance(refresh_token, str)
+    assert {"typ": "JWT", "alg": "RS256"} == jwt.get_unverified_header(refresh_token)
     assert {
         "sub": user.user_id,
-        "exp": to_timestamp(current_time + timedelta(hours=2)),
+        "iat": to_timestamp(current_time),
+        "exp": to_timestamp(current_time + timedelta(days=365)),
+        "typ": "refresh",
         "aud": "audience-url",
         "iss": "gatekeeper-url",
-    } == jwt.decode(token, public_key, algorithms=["RS256"], audience="audience-url")
+    } == jwt.decode(
+        refresh_token, public_key, algorithms=["RS256"], audience="audience-url"
+    )
+
+
+@pytest.mark.django_db
+def test_generate_access_token_from_refresh_token(
+    settings, tmp_path, current_time, user
+):
+    private_key_path = tmp_path / "private-key.pem"
+    public_key_path = tmp_path / "public-key.pem"
+
+    settings.AUTH_PRIVATE_KEY_PATH = private_key_path
+    settings.AUTH_PUBLIC_KEY_PATH = public_key_path
+    settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
+    settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
+
+    public_key, private_key = create_public_private_key_pair()
+    with open(private_key_path, "wb") as f:
+        f.write(private_key_to_bytes(private_key))
+    with open(public_key_path, "wb") as f:
+        f.write(public_key_to_bytes(public_key))
+
+    refresh_token = generate_refresh_token_for_user(user, current_time)
+    access_token = generate_access_token_from_refresh_token(refresh_token, current_time)
+    assert isinstance(access_token, str)
 
 
 def create_public_private_key_pair() -> Tuple[rsa.RSAPublicKey, rsa.RSAPrivateKey]:
@@ -58,4 +89,11 @@ def private_key_to_bytes(private_key: rsa.RSAPrivateKey) -> bytes:
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption(),
+    )
+
+
+def public_key_to_bytes(public_key: rsa.RSAPublicKey) -> bytes:
+    return public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
