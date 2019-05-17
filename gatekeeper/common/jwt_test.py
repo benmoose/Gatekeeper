@@ -55,7 +55,7 @@ def test_generate_access_token_from_refresh_token(
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
     settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
 
-    access_token, payload = generate_access_token_for_user(user, current_time)
+    access_token, payload = generate_access_token_for_user(user.user_id, current_time)
     assert isinstance(access_token, str)
     assert isinstance(payload, dict)
     assert {

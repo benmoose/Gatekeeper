@@ -33,11 +33,11 @@ def generate_refresh_token_for_user(
 
 
 def generate_access_token_for_user(
-    user: User, current_time: datetime
+    user_id: str, current_time: datetime
 ) -> Tuple[str, dict]:
     expiry_time = current_time + timedelta(seconds=ACCESS_TOKEN_EXPIRY_TIME_SECONDS)
     payload = _get_access_token_jwt_payload(
-        user_id=user.user_id,
+        user_id=user_id,
         issuing_time=current_time,
         expiry_time=expiry_time,
         is_refresh_token=False,
