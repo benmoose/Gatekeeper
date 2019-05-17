@@ -6,11 +6,6 @@ from django.conf import settings
 from django.test import Client
 from django.urls import reverse
 
-from common.test_utils import (
-    create_public_private_key_pair,
-    private_key_to_bytes,
-    public_key_to_bytes,
-)
 from db.models import RefreshToken, User, VerificationCode
 
 from .verify_phone_number import verify_phone_number
@@ -55,22 +50,11 @@ def test_verify_phone_number_bad_request(request_data, expected_message):
 
 
 @pytest.mark.django_db
-def test_verify_phone_number(settings, tmp_path, verification_code):
+def test_verify_phone_number(settings, rsa_keys, verification_code):
     verification_code.save()
 
-    private_key_path = tmp_path / "private-key.pem"
-    public_key_path = tmp_path / "public-key.pem"
-
-    settings.AUTH_PRIVATE_KEY_PATH = private_key_path
-    settings.AUTH_PUBLIC_KEY_PATH = public_key_path
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
     settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
-
-    public_key, private_key = create_public_private_key_pair()
-    with open(private_key_path, "wb") as f:
-        f.write(private_key_to_bytes(private_key))
-    with open(public_key_path, "wb") as f:
-        f.write(public_key_to_bytes(public_key))
 
     assert 0 == len(User.objects.all())
     assert 0 == len(RefreshToken.objects.all())
@@ -86,22 +70,11 @@ def test_verify_phone_number(settings, tmp_path, verification_code):
 
 
 @pytest.mark.django_db
-def test_verify_phone_number_multiple_attempts(settings, tmp_path, verification_code):
+def test_verify_phone_number_multiple_attempts(settings, rsa_keys, verification_code):
     verification_code.save()
 
-    private_key_path = tmp_path / "private-key.pem"
-    public_key_path = tmp_path / "public-key.pem"
-
-    settings.AUTH_PRIVATE_KEY_PATH = private_key_path
-    settings.AUTH_PUBLIC_KEY_PATH = public_key_path
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
     settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
-
-    public_key, private_key = create_public_private_key_pair()
-    with open(private_key_path, "wb") as f:
-        f.write(private_key_to_bytes(private_key))
-    with open(public_key_path, "wb") as f:
-        f.write(public_key_to_bytes(public_key))
 
     assert 0 == len(User.objects.all())
     assert 0 == len(RefreshToken.objects.all())

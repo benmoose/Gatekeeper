@@ -1,7 +1,19 @@
+from datetime import datetime
 from typing import Optional
 
 from common.jwt import REFRESH_TOKEN_TYPE, decode_token
+from common.model import data_model
 from db.tokens import get_latest_refresh_token_for_user
+
+
+@data_model
+class ResponseData:
+    access_token: str
+    expiry_time: datetime
+
+
+def access_token(request):
+    pass
 
 
 def get_refresh_token_payload_if_valid(refresh_token: str) -> Optional[dict]:

@@ -34,5 +34,8 @@ def to_timestamp(dt: datetime) -> int:
 
 def from_timestamp(timestamp: int) -> datetime:
     """
+    Return UTC datetime from a POSIX timestamp.
+    >>> from_timestamp(1577836800)
+    datetime.datetime(2020, 1, 1, 0, 0, tzinfo=<UTC>)
     """
     return datetime.fromtimestamp(timestamp, tz=pytz.UTC)

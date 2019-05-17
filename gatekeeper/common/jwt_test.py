@@ -4,11 +4,6 @@ import jwt
 import pytest
 import pytz
 
-from common.test_utils import (
-    create_public_private_key_pair,
-    private_key_to_bytes,
-    public_key_to_bytes,
-)
 from common.time import to_timestamp
 from db.user import get_or_create_user
 
@@ -27,16 +22,9 @@ def user():
 
 
 @pytest.mark.django_db
-def test_generate_refresh_token_for_user(settings, tmp_path, current_time, user):
-    private_key_path = tmp_path / "private-key.pem"
-
-    settings.AUTH_PRIVATE_KEY_PATH = private_key_path
+def test_generate_refresh_token_for_user(settings, rsa_keys, current_time, user):
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
     settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
-
-    public_key, private_key = create_public_private_key_pair()
-    with open(private_key_path, "wb") as f:
-        f.write(private_key_to_bytes(private_key))
 
     refresh_token, payload = generate_refresh_token_for_user(
         user, current_time, "token-id"
@@ -53,27 +41,19 @@ def test_generate_refresh_token_for_user(settings, tmp_path, current_time, user)
         "iss": "gatekeeper-url",
         "jti": "token-id",
     } == jwt.decode(
-        refresh_token, public_key, algorithms=["RS256"], audience="audience-url"
+        refresh_token,
+        rsa_keys.public_key,
+        algorithms=["RS256"],
+        audience="audience-url",
     )
 
 
 @pytest.mark.django_db
 def test_generate_access_token_from_refresh_token(
-    settings, tmp_path, current_time, user
+    settings, rsa_keys, current_time, user
 ):
-    private_key_path = tmp_path / "private-key.pem"
-    public_key_path = tmp_path / "public-key.pem"
-
-    settings.AUTH_PUBLIC_KEY_PATH = public_key_path
-    settings.AUTH_PRIVATE_KEY_PATH = private_key_path
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
     settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
-
-    public_key, private_key = create_public_private_key_pair()
-    with open(public_key_path, "wb") as f:
-        f.write(public_key_to_bytes(public_key))
-    with open(private_key_path, "wb") as f:
-        f.write(private_key_to_bytes(private_key))
 
     access_token, payload = generate_access_token_for_user(user, current_time)
     assert isinstance(access_token, str)
@@ -86,5 +66,5 @@ def test_generate_access_token_from_refresh_token(
         "aud": "audience-url",
         "iss": "gatekeeper-url",
     } == jwt.decode(
-        access_token, public_key, algorithms=["RS256"], audience="audience-url"
+        access_token, rsa_keys.public_key, algorithms=["RS256"], audience="audience-url"
     )
