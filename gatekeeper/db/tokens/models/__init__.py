@@ -1,1 +1,1 @@
-from .revoked_refresh_token import RevokedRefreshToken
+from .refresh_token import RefreshToken

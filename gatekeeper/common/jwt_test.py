@@ -13,7 +13,7 @@ from common.time import to_timestamp
 from db.user import get_or_create_user
 
 from .jwt import (
-    generate_access_token_from_refresh_token,
+    generate_access_token_for_user,
     generate_refresh_token_for_user,
 )
 
@@ -40,8 +40,9 @@ def test_generate_refresh_token_for_user(settings, tmp_path, current_time, user)
     with open(private_key_path, "wb") as f:
         f.write(private_key_to_bytes(private_key))
 
-    refresh_token = generate_refresh_token_for_user(user, current_time, "token-id")
+    refresh_token, payload = generate_refresh_token_for_user(user, current_time, "token-id")
     assert isinstance(refresh_token, str)
+    assert isinstance(payload, dict)
     assert {"typ": "JWT", "alg": "RS256"} == jwt.get_unverified_header(refresh_token)
     assert {
         "sub": user.user_id,
@@ -63,23 +64,22 @@ def test_generate_access_token_from_refresh_token(
     private_key_path = tmp_path / "private-key.pem"
     public_key_path = tmp_path / "public-key.pem"
 
-    settings.AUTH_PRIVATE_KEY_PATH = private_key_path
     settings.AUTH_PUBLIC_KEY_PATH = public_key_path
+    settings.AUTH_PRIVATE_KEY_PATH = private_key_path
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
     settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
 
     public_key, private_key = create_public_private_key_pair()
-    with open(private_key_path, "wb") as f:
-        f.write(private_key_to_bytes(private_key))
     with open(public_key_path, "wb") as f:
         f.write(public_key_to_bytes(public_key))
+    with open(private_key_path, "wb") as f:
+        f.write(private_key_to_bytes(private_key))
 
-    refresh_token = generate_refresh_token_for_user(user, current_time, "token-1")
-    access_token, expiry_time = generate_access_token_from_refresh_token(
-        refresh_token, current_time
+    access_token, payload = generate_access_token_for_user(
+        user, current_time
     )
     assert isinstance(access_token, str)
-    assert isinstance(expiry_time, datetime)
+    assert isinstance(payload, dict)
     assert {
         "sub": user.user_id,
         "iat": to_timestamp(current_time),
@@ -90,4 +90,3 @@ def test_generate_access_token_from_refresh_token(
     } == jwt.decode(
         access_token, public_key, algorithms=["RS256"], audience="audience-url"
     )
-    assert current_time + timedelta(hours=1) == expiry_time
