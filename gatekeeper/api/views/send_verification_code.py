@@ -20,7 +20,7 @@ from db.verification import create_verification_code, invalidate_verification_co
 FIVE_MINUTES = 5 * 60
 
 VERIFICATION_CODE_LENGTH = 4
-VERIFICATION_CODE_POPULATION = digits
+VERIFICATION_CODE_ALPHABET = digits
 VERIFICATION_CODE_LIFETIME_SECONDS = FIVE_MINUTES
 
 
@@ -50,7 +50,7 @@ def send_verification_code(request) -> HttpResponse:
     success, verification_code = send_verification_code_sms(
         provider=provider,
         phone_number=phone_number,
-        verification_code_population=VERIFICATION_CODE_POPULATION,
+        verification_code_population=VERIFICATION_CODE_ALPHABET,
         verification_code_length=VERIFICATION_CODE_LENGTH,
         verification_code_expiry_time=verification_code_expiry_time,
         callback=message_status_callback,
