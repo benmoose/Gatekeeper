@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Optional
 
+from django.views.decorators.http import require_POST
+
 from common.jwt import REFRESH_TOKEN_TYPE, decode_token, generate_access_token_for_user
 from common.model import data_model
 from common.parse import safe_parse_json
@@ -20,7 +22,8 @@ class ResponseData:
     expiry_time: datetime
 
 
-def generate_access_token(request):
+@require_POST
+def retrieve_access_token(request):
     request_data = get_request_data(request.body)
     if request_data is None:
         return error_response("Invalid or missing fields in request body")
@@ -51,10 +54,12 @@ def get_request_data(request_body: str) -> Optional[RequestData]:
 
 def get_refresh_token_payload_if_valid(refresh_token: str) -> Optional[dict]:
     """
-    Return token payload if it's valid and the user's most recently issued refresh
-    token.
+    Return refresh token payload if it's valid and the user's most recently issued
+    refresh token, else returns None.
     """
     payload = decode_token(refresh_token)
+    if payload is None:
+        return None
     if payload["typ"] != REFRESH_TOKEN_TYPE:
         return None
     expected_refresh_token = get_latest_refresh_token_for_user(user_id=payload["sub"])

@@ -35,7 +35,6 @@ def test_generate_refresh_token_for_user(settings, rsa_keys, current_time, user)
     assert {
         "sub": user.user_id,
         "iat": to_timestamp(current_time),
-        "exp": to_timestamp(current_time + timedelta(days=365)),
         "typ": "refresh",
         "aud": "audience-url",
         "iss": "gatekeeper-url",

@@ -50,8 +50,10 @@ def verify_phone_number(request):
     user, created = get_or_create_user(phone_number=request_data.phone_number)
     if not created:
         return error_response("phone number has already been verified")
-    refresh_token = generate_refresh_token(user, current_time)
-    access_token, token_payload = generate_access_token_for_user(user, current_time)
+    refresh_token = generate_and_record_refresh_token(user, current_time)
+    access_token, token_payload = generate_access_token_for_user(
+        user.user_id, current_time
+    )
     expiry_time = from_timestamp(token_payload["exp"])
     response_data = ResponseData(
         refresh_token=refresh_token, access_token=access_token, expiry_time=expiry_time
@@ -67,7 +69,7 @@ def get_request_data(request_body: bytes) -> Optional[RequestData]:
         return None
 
 
-def generate_refresh_token(user: User, current_time: datetime) -> str:
+def generate_and_record_refresh_token(user: User, current_time: datetime) -> str:
     token_id = generate_refresh_token_id()
     token, payload = generate_refresh_token_for_user(user, current_time, token_id)
     record_user_refresh_token(user, token_id, payload)

@@ -50,7 +50,8 @@ def test_verify_phone_number_bad_request(request_data, expected_message):
 
 
 @pytest.mark.django_db
-def test_verify_phone_number(settings, rsa_keys, verification_code):
+@pytest.mark.usefixtures("rsa_keys")
+def test_verify_phone_number(settings, verification_code):
     verification_code.save()
 
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
@@ -70,7 +71,8 @@ def test_verify_phone_number(settings, rsa_keys, verification_code):
 
 
 @pytest.mark.django_db
-def test_verify_phone_number_multiple_attempts(settings, rsa_keys, verification_code):
+@pytest.mark.usefixtures("rsa_keys")
+def test_verify_phone_number_multiple_attempts(settings, verification_code):
     verification_code.save()
 
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
