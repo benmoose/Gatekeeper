@@ -1,4 +1,5 @@
-from .interface.refresh_token_blacklist_interface import (
-    blacklist_refresh_token,
-    get_refresh_token_blacklist_details,
+from .interface.revoked_refresh_token_interface import (
+    create_revoked_refresh_token,
+    get_revoked_refresh_token,
+    is_refresh_token_revoked,
 )

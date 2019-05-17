@@ -1,1 +1,1 @@
-from .refresh_token_blacklist import RefreshTokenBlacklist
+from .revoked_refresh_token import RevokedRefreshToken

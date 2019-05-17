@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Tuple
 
 import jwt
 from django.conf import settings
 
 from common.generate import generate_id
-from common.time import from_timestamp, to_timestamp
+from common.time import to_timestamp
 from db.models import User
-from db.tokens import get_refresh_token_blacklist_details
+from db.tokens import is_refresh_token_revoked
 
 REFRESH_TOKEN_EXPIRY_TIME_SECONDS = 365 * 24 * 60 * 60  # one year
 ACCESS_TOKEN_EXPIRY_TIME_SECONDS = 60 * 60  # one hour
@@ -19,15 +19,16 @@ ACCESS_TOKEN_TYPE = "access"
 REFRESH_TOKEN_TYPE = "refresh"
 
 
-def generate_refresh_token_for_user(user: User, current_time: datetime) -> str:
-    refresh_token_id = generate_id(REFRESH_TOKEN_TYPE)
+def generate_refresh_token_for_user(
+    user: User, current_time: datetime, token_id: str
+) -> str:
     expiry_time = current_time + timedelta(seconds=REFRESH_TOKEN_EXPIRY_TIME_SECONDS)
     payload = get_refresh_jwt_payload(
         user_id=user.user_id,
         issuing_time=current_time,
         expiry_time=expiry_time,
         is_refresh_token=True,
-        token_id=refresh_token_id,
+        token_id=token_id,
     )
     with open(settings.AUTH_PRIVATE_KEY_PATH, "rb") as private_key:
         return jwt.encode(
@@ -40,7 +41,7 @@ def generate_refresh_token_for_user(user: User, current_time: datetime) -> str:
 
 def generate_access_token_from_refresh_token(
     refresh_token: str, current_time: datetime
-) -> Optional[str]:
+) -> Optional[Tuple[str, datetime]]:
     refresh_token_payload = get_refresh_token_payload_if_valid(refresh_token)
     if refresh_token_payload is None:
         return None
@@ -55,12 +56,13 @@ def generate_access_token_from_refresh_token(
         refresh_token_id=refresh_token_id,
     )
     with open(settings.AUTH_PRIVATE_KEY_PATH, "rb") as private_key:
-        return jwt.encode(
+        access_token = jwt.encode(
             payload=payload,
             key=private_key.read(),
             algorithm=JWT_ALGORITHM,
             headers=get_jwt_headers(),
         ).decode("UTF-8")
+    return access_token, expiry_time
 
 
 def get_refresh_token_payload_if_valid(refresh_token: str) -> Optional[dict]:
@@ -73,8 +75,7 @@ def get_refresh_token_payload_if_valid(refresh_token: str) -> Optional[dict]:
         )
     if payload["typ"] != REFRESH_TOKEN_TYPE:
         return None
-    token_blacklist_info = get_refresh_token_blacklist_details(token_id=payload["jti"])
-    if token_blacklist_info is not None:
+    if is_refresh_token_revoked(token_id=payload["jti"]):
         return None
     return payload
 
@@ -103,7 +104,7 @@ def get_access_token_jwt_payload(
     refresh_token_id: str,
 ):
     return get_jwt_payload(
-        user_id, issuing_time, expiry_time, is_refresh_token, frm=refresh_token_id
+        user_id, issuing_time, expiry_time, is_refresh_token, src=refresh_token_id
     )
 
 
@@ -123,3 +124,7 @@ def get_jwt_payload(
         "typ": REFRESH_TOKEN_TYPE if is_refresh_token else ACCESS_TOKEN_TYPE,
         **extra,
     }
+
+
+def generate_refresh_token_id() -> str:
+    return generate_id("refreshtoken")
