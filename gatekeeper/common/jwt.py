@@ -47,13 +47,11 @@ def generate_access_token_from_refresh_token(
         return None
 
     expiry_time = current_time + timedelta(seconds=ACCESS_TOKEN_EXPIRY_TIME_SECONDS)
-    refresh_token_id = refresh_token_payload["jti"]
     payload = get_access_token_jwt_payload(
         user_id=refresh_token_payload["sub"],
         issuing_time=current_time,
         expiry_time=expiry_time,
         is_refresh_token=False,
-        refresh_token_id=refresh_token_id,
     )
     with open(settings.AUTH_PRIVATE_KEY_PATH, "rb") as private_key:
         access_token = jwt.encode(
@@ -101,10 +99,9 @@ def get_access_token_jwt_payload(
     issuing_time: datetime,
     expiry_time: datetime,
     is_refresh_token: bool,
-    refresh_token_id: str,
 ):
     return get_jwt_payload(
-        user_id, issuing_time, expiry_time, is_refresh_token, src=refresh_token_id
+        user_id, issuing_time, expiry_time, is_refresh_token
     )
 
 

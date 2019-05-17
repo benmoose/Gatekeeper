@@ -87,7 +87,6 @@ def test_generate_access_token_from_refresh_token(
         "typ": "access",
         "aud": "audience-url",
         "iss": "gatekeeper-url",
-        "src": "token-1",
     } == jwt.decode(
         access_token, public_key, algorithms=["RS256"], audience="audience-url"
     )
