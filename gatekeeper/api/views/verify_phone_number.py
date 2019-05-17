@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional
 
 from django.views.decorators.http import require_POST
 
@@ -11,11 +11,11 @@ from common.jwt import (
 from common.model import data_model
 from common.parse import safe_parse_json
 from common.response import error_response, success_response
-from common.time import get_current_utc_time, from_timestamp
+from common.time import from_timestamp, get_current_utc_time
 from db.models import User
+from db.tokens import record_user_refresh_token
 from db.user import get_or_create_user
 from db.verification import get_active_verification_codes_for_phone_number
-from db.tokens import record_user_refresh_token
 
 
 @data_model
@@ -46,11 +46,12 @@ def verify_phone_number(request):
         return error_response("invalid verification code")
 
     current_time = get_current_utc_time()
-    user = get_or_create_user(phone_number=request_data.phone_number)
+
+    user, created = get_or_create_user(phone_number=request_data.phone_number)
+    if not created:
+        return error_response("phone number has already been verified")
     refresh_token = generate_refresh_token(user, current_time)
-    access_token, token_payload = generate_access_token_for_user(
-        user, current_time
-    )
+    access_token, token_payload = generate_access_token_for_user(user, current_time)
     expiry_time = from_timestamp(token_payload["exp"])
     response_data = ResponseData(
         refresh_token=refresh_token, access_token=access_token, expiry_time=expiry_time

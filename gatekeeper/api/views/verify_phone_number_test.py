@@ -11,7 +11,7 @@ from common.test_utils import (
     private_key_to_bytes,
     public_key_to_bytes,
 )
-from db.models import User, VerificationCode
+from db.models import RefreshToken, User, VerificationCode
 
 from .verify_phone_number import verify_phone_number
 
@@ -73,18 +73,20 @@ def test_verify_phone_number(settings, tmp_path, verification_code):
         f.write(public_key_to_bytes(public_key))
 
     assert 0 == len(User.objects.all())
+    assert 0 == len(RefreshToken.objects.all())
     response = make_request(
         {"phone_number": "+447000000000", "verification_code": "abcd"}
     )
     assert 200 == response.status_code
     assert 1 == len(User.objects.all())
+    assert 1 == len(RefreshToken.objects.all())
     assert "+447000000000" == User.objects.first().phone_number
     response_data = json.loads(response.content)
     assert {"refresh_token", "access_token", "expiry_time"} == response_data.keys()
 
 
 @pytest.mark.django_db
-def test_verify_phone_number_idempotent(settings, tmp_path, verification_code):
+def test_verify_phone_number_multiple_attempts(settings, tmp_path, verification_code):
     verification_code.save()
 
     private_key_path = tmp_path / "private-key.pem"
@@ -102,10 +104,20 @@ def test_verify_phone_number_idempotent(settings, tmp_path, verification_code):
         f.write(public_key_to_bytes(public_key))
 
     assert 0 == len(User.objects.all())
-    make_request({"phone_number": "+447000000000", "verification_code": "abcd"})
+    assert 0 == len(RefreshToken.objects.all())
+    first_response = make_request(
+        {"phone_number": "+447000000000", "verification_code": "abcd"}
+    )
+    assert 200 == first_response.status_code
     assert 1 == len(User.objects.all())
-    make_request({"phone_number": "+447000000000", "verification_code": "abcd"})
+    assert 1 == len(RefreshToken.objects.all())
+    second_response = make_request(
+        {"phone_number": "+447000000000", "verification_code": "abcd"}
+    )
+    assert 400 == second_response.status_code
+    assert b"phone number has already been verified" in second_response.content
     assert 1 == len(User.objects.all())
+    assert 1 == len(RefreshToken.objects.all())
 
 
 def make_request(data):

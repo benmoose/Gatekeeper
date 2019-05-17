@@ -1,7 +1,7 @@
 from typing import Optional
 
+from common.jwt import REFRESH_TOKEN_TYPE, decode_token
 from db.tokens import get_latest_refresh_token_for_user
-from common.jwt import decode_token, REFRESH_TOKEN_TYPE
 
 
 def get_refresh_token_payload_if_valid(refresh_token: str) -> Optional[dict]:

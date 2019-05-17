@@ -25,7 +25,7 @@ class User:
 
 @pytest.mark.django_db
 def test_user_model():
-    db_user = get_or_create_user("+447000000000")
+    db_user, _ = get_or_create_user("+447000000000")
     user = User.from_db_model(db_user)
 
     assert db_user.user_id == user.user_id

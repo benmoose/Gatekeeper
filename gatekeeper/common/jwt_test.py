@@ -12,10 +12,7 @@ from common.test_utils import (
 from common.time import to_timestamp
 from db.user import get_or_create_user
 
-from .jwt import (
-    generate_access_token_for_user,
-    generate_refresh_token_for_user,
-)
+from .jwt import generate_access_token_for_user, generate_refresh_token_for_user
 
 
 @pytest.fixture
@@ -25,7 +22,8 @@ def current_time():
 
 @pytest.fixture
 def user():
-    return get_or_create_user("+447000000000")
+    user, _ = get_or_create_user("+447000000000")
+    return user
 
 
 @pytest.mark.django_db
@@ -40,7 +38,9 @@ def test_generate_refresh_token_for_user(settings, tmp_path, current_time, user)
     with open(private_key_path, "wb") as f:
         f.write(private_key_to_bytes(private_key))
 
-    refresh_token, payload = generate_refresh_token_for_user(user, current_time, "token-id")
+    refresh_token, payload = generate_refresh_token_for_user(
+        user, current_time, "token-id"
+    )
     assert isinstance(refresh_token, str)
     assert isinstance(payload, dict)
     assert {"typ": "JWT", "alg": "RS256"} == jwt.get_unverified_header(refresh_token)
@@ -75,9 +75,7 @@ def test_generate_access_token_from_refresh_token(
     with open(private_key_path, "wb") as f:
         f.write(private_key_to_bytes(private_key))
 
-    access_token, payload = generate_access_token_for_user(
-        user, current_time
-    )
+    access_token, payload = generate_access_token_for_user(user, current_time)
     assert isinstance(access_token, str)
     assert isinstance(payload, dict)
     assert {
