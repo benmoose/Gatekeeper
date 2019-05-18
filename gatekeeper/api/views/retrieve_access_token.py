@@ -3,12 +3,13 @@ from typing import Optional
 
 from django.views.decorators.http import require_POST
 
-from common.jwt import REFRESH_TOKEN_TYPE, decode_token, generate_access_token_for_user
+from common.jwt import generate_access_token_for_user
 from common.model import data_model
 from common.parse import safe_parse_json
 from common.response import error_response, success_response
 from common.time import from_timestamp, get_current_utc_time
-from db.tokens import get_latest_refresh_token_for_user
+
+from ..utils.refresh_token import get_refresh_token_payload_if_active
 
 
 @data_model
@@ -28,7 +29,7 @@ def retrieve_access_token(request):
     if request_data is None:
         return error_response("Invalid or missing fields in request body")
 
-    refresh_token_payload = get_refresh_token_payload_if_valid(
+    refresh_token_payload = get_refresh_token_payload_if_active(
         request_data.refresh_token
     )
     if refresh_token_payload is None:
@@ -50,21 +51,3 @@ def get_request_data(request_body: str) -> Optional[RequestData]:
         return RequestData.from_dict(safe_parse_json(request_body))
     except Exception:
         return None
-
-
-def get_refresh_token_payload_if_valid(refresh_token: str) -> Optional[dict]:
-    """
-    Return refresh token payload if it's valid and the user's most recently issued
-    refresh token, else returns None.
-    """
-    payload = decode_token(refresh_token)
-    if payload is None:
-        return None
-    if payload["typ"] != REFRESH_TOKEN_TYPE:
-        return None
-    expected_refresh_token = get_latest_refresh_token_for_user(user_id=payload["sub"])
-    if expected_refresh_token is None:
-        return None
-    if payload["jti"] != expected_refresh_token.token_id:
-        return None
-    return payload

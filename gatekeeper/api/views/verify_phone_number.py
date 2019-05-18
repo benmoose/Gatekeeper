@@ -13,7 +13,7 @@ from common.parse import safe_parse_json
 from common.response import error_response, success_response
 from common.time import from_timestamp, get_current_utc_time
 from db.models import User
-from db.tokens import record_user_refresh_token
+from db.tokens import register_user_refresh_token
 from db.user import get_or_create_user
 from db.verification import get_active_verification_codes_for_phone_number
 
@@ -72,5 +72,5 @@ def get_request_data(request_body: bytes) -> Optional[RequestData]:
 def generate_and_record_refresh_token(user: User, current_time: datetime) -> str:
     token_id = generate_refresh_token_id()
     token, payload = generate_refresh_token_for_user(user, current_time, token_id)
-    record_user_refresh_token(user, token_id, payload)
+    register_user_refresh_token(user, token_id, payload)
     return token

@@ -14,13 +14,10 @@ from common.jwt import (
 )
 from common.response import HTTP_400_BAD_REQUEST
 from common.time import to_timestamp
-from db.tokens import record_user_refresh_token
+from db.tokens import register_user_refresh_token
 from db.user import get_or_create_user
 
-from .retrieve_access_token import (
-    get_refresh_token_payload_if_valid,
-    retrieve_access_token,
-)
+from .retrieve_access_token import retrieve_access_token
 
 Token = namedtuple("Token", ("encoded", "payload"))
 
@@ -82,7 +79,7 @@ def test_retrieve_access_token_with_access_token(current_time, user):
 @pytest.mark.django_db
 @pytest.mark.usefixtures("rsa_keys")
 def test_retrieve_access_token(current_time, user, token_id, refresh_token):
-    record_user_refresh_token(user, token_id, refresh_token.payload)
+    register_user_refresh_token(user, token_id, refresh_token.payload)
     response = make_request({"refresh_token": refresh_token.encoded})
     assert 200 == response.status_code
 
@@ -95,26 +92,6 @@ def test_retrieve_access_token(current_time, user, token_id, refresh_token):
     assert user.user_id == payload["sub"]
     assert to_timestamp(expiry_time) == payload["exp"]
     assert expiry_time.isoformat() == response_data["expiry_time"]
-
-
-@pytest.mark.django_db
-@pytest.mark.usefixtures("rsa_keys")
-def test_get_refresh_token_payload_if_valid(
-    current_time, user, token_id, refresh_token
-):
-    access_token, _ = generate_access_token_for_user(user.user_id, current_time)
-    assert None is get_refresh_token_payload_if_valid(access_token)
-    assert None is get_refresh_token_payload_if_valid("")
-    assert None is get_refresh_token_payload_if_valid("foo")
-    assert None is get_refresh_token_payload_if_valid(refresh_token.encoded)
-
-    record_user_refresh_token(user, token_id, refresh_token.payload)
-    assert refresh_token.payload == get_refresh_token_payload_if_valid(
-        refresh_token.encoded
-    )
-
-    record_user_refresh_token(user, "newer-refresh-token", {})
-    assert None is get_refresh_token_payload_if_valid(refresh_token.encoded)
 
 
 def make_request(data):

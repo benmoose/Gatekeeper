@@ -1,4 +1,5 @@
 from .interface.refresh_token_interface import (
+    delete_refresh_token,
     get_latest_refresh_token_for_user,
-    record_user_refresh_token,
+    register_user_refresh_token,
 )
