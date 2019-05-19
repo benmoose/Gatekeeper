@@ -66,7 +66,7 @@ def send_verification_code(request) -> HttpResponse:
 def get_request_data(request_body: bytes) -> Optional[RequestData]:
     try:
         return RequestData.from_dict(safe_parse_json(request_body))
-    except TypeError:
+    except Exception:
         return None
 
 
