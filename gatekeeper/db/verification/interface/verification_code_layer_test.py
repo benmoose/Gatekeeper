@@ -46,10 +46,8 @@ def test_get_active_verification_codes():
     create_verification_code("+447000000000", "a", time_now - timedelta(minutes=1))
     create_verification_code("+447000000000", "b", time_now)
     create_verification_code("+447000000000", "c", time_now + timedelta(minutes=1))
-    code_inactive = create_verification_code(
-        "+447000000000", "d", time_now + timedelta(minutes=1)
-    )
-    invalidate_verification_code(code_inactive)
+    create_verification_code("+447000000000", "d", time_now + timedelta(minutes=1))
+    invalidate_verification_code("d")
 
     assert ["c"] == get_active_verification_codes_for_phone_number(
         "+447000000000", time_now
@@ -61,6 +59,6 @@ def test_invalidate_verification_code(expiry_time):
     verification_code = create_verification_code("+447000000000", "abcd", expiry_time)
     assert verification_code.is_active
 
-    invalidate_verification_code(verification_code)
+    invalidate_verification_code("abcd")
     verification_code.refresh_from_db()
     assert False is verification_code.is_active

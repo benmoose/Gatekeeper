@@ -38,7 +38,7 @@ def send_verification_code(request) -> HttpResponse:
 
     phone_number = get_e164_phone_number(request_data.phone_number, request_data.region)
     if phone_number is None:
-        return error_response("invalid phone_number")
+        return error_response("Invalid phone_number")
 
     current_time = get_current_utc_time()
     verification_code_expiry_time = current_time + timedelta(
@@ -58,7 +58,7 @@ def send_verification_code(request) -> HttpResponse:
     )
     if success is False:
         invalidate_verification_code(verification_code)
-        return error_response("failed to send verification token", status=503)
+        return error_response("Failed to send verification token", status=503)
 
     return success_response({"phone_number": phone_number})
 

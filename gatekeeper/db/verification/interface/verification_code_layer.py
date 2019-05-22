@@ -26,9 +26,7 @@ def get_active_verification_codes_for_phone_number(
 
 
 @transaction.atomic
-def invalidate_verification_code(verification_code: VerificationCode):
-    _verification_code = VerificationCode.objects.select_for_update().get(
-        pk=verification_code.pk
-    )
-    _verification_code.is_active = False
-    _verification_code.save(update_fields=["is_active", "modified_on"])
+def invalidate_verification_code(code: str):
+    verification_code = VerificationCode.objects.select_for_update().get(code=code)
+    verification_code.is_active = False
+    verification_code.save(update_fields=["is_active", "modified_on"])

@@ -35,11 +35,11 @@ def verification_code_expired(test_time) -> VerificationCode:
 @pytest.mark.parametrize(
     "request_data,expected_message",
     [
-        ({}, "missing or invalid data"),
-        ({"phone_number": "+447000000000"}, "missing or invalid data"),
+        ({}, "Missing or invalid data"),
+        ({"phone_number": "+447000000000"}, "Missing or invalid data"),
         (
             {"phone_number": "+447000000000", "verification_code": "abc"},
-            "invalid verification code",
+            "Invalid verification code",
         ),
     ],
 )
@@ -90,7 +90,7 @@ def test_verify_phone_number_multiple_attempts(settings, verification_code):
         {"phone_number": "+447000000000", "verification_code": "abcd"}
     )
     assert 400 == second_response.status_code
-    assert b"phone number has already been verified" in second_response.content
+    assert b"Invalid verification code" in second_response.content
     assert 1 == len(User.objects.all())
     assert 1 == len(RefreshToken.objects.all())
 

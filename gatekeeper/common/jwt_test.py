@@ -32,6 +32,14 @@ def test_generate_refresh_token_for_user(settings, rsa_keys, current_time, user)
     assert isinstance(refresh_token, str)
     assert isinstance(payload, dict)
     assert {"typ": "JWT", "alg": "RS256"} == jwt.get_unverified_header(refresh_token)
+
+    decoded_payload = jwt.decode(
+        refresh_token,
+        rsa_keys.public_key,
+        algorithms=["RS256"],
+        audience="audience-url",
+    )
+    assert payload == decoded_payload
     assert {
         "sub": user.user_id,
         "iat": to_timestamp(current_time),
@@ -39,12 +47,7 @@ def test_generate_refresh_token_for_user(settings, rsa_keys, current_time, user)
         "aud": "audience-url",
         "iss": "gatekeeper-url",
         "jti": "token-id",
-    } == jwt.decode(
-        refresh_token,
-        rsa_keys.public_key,
-        algorithms=["RS256"],
-        audience="audience-url",
-    )
+    } == decoded_payload
 
 
 @pytest.mark.django_db

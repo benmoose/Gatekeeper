@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Optional
 
@@ -15,7 +16,12 @@ from common.time import from_timestamp, get_current_utc_time
 from db.models import User
 from db.tokens import register_user_refresh_token
 from db.user import get_or_create_user
-from db.verification import get_active_verification_codes_for_phone_number
+from db.verification import (
+    get_active_verification_codes_for_phone_number,
+    invalidate_verification_code,
+)
+
+logger = logging.getLogger(__name__)
 
 
 @data_model
@@ -35,7 +41,7 @@ class ResponseData:
 def verify_phone_number(request):
     request_data = get_request_data(request.body)
     if request_data is None:
-        return error_response("missing or invalid data")
+        return error_response("Missing or invalid data")
 
     current_time = get_current_utc_time()
     active_codes = get_active_verification_codes_for_phone_number(
@@ -43,13 +49,13 @@ def verify_phone_number(request):
     )
     is_valid_code = request_data.verification_code in active_codes
     if not is_valid_code:
-        return error_response("invalid verification code")
+        return error_response("Invalid verification code")
 
-    current_time = get_current_utc_time()
-
+    invalidate_verification_code(request_data.verification_code)
     user, created = get_or_create_user(phone_number=request_data.phone_number)
     if not created:
-        return error_response("phone number has already been verified")
+        logger.info(f"Generating refresh token for existing user {user.user_id}")
+
     refresh_token = generate_and_record_refresh_token(user, current_time)
     access_token, token_payload = generate_access_token_for_user(
         user.user_id, current_time
