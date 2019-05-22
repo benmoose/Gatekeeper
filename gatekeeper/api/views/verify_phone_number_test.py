@@ -7,6 +7,7 @@ from django.test import Client
 from django.urls import reverse
 
 from db.models import RefreshToken, User, VerificationCode
+from db.user import get_or_create_user
 
 from .verify_phone_number import verify_phone_number
 
@@ -19,7 +20,7 @@ def test_time() -> datetime:
 @pytest.fixture
 def verification_code(test_time) -> VerificationCode:
     expiry_time = test_time + timedelta(minutes=5)
-    return VerificationCode(
+    return VerificationCode.objects.create(
         phone_number="+447000000000", code="abcd", expires_at=expiry_time
     )
 
@@ -27,7 +28,7 @@ def verification_code(test_time) -> VerificationCode:
 @pytest.fixture
 def verification_code_expired(test_time) -> VerificationCode:
     expiry_time = test_time - timedelta(minutes=5)
-    return VerificationCode(
+    return VerificationCode.objects.create(
         phone_number="+447000000000", code="abcd", expires_at=expiry_time
     )
 
@@ -52,8 +53,6 @@ def test_verify_phone_number_bad_request(request_data, expected_message):
 @pytest.mark.django_db
 @pytest.mark.usefixtures("rsa_keys")
 def test_verify_phone_number(settings, verification_code):
-    verification_code.save()
-
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
     settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
 
@@ -69,12 +68,13 @@ def test_verify_phone_number(settings, verification_code):
     response_data = json.loads(response.content)
     assert {"refresh_token", "access_token", "expiry_time"} == response_data.keys()
 
+    verification_code.refresh_from_db()
+    assert False is verification_code.is_active
+
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("rsa_keys")
-def test_verify_phone_number_multiple_attempts(settings, verification_code):
-    verification_code.save()
-
+@pytest.mark.usefixtures("rsa_keys", "verification_code")
+def test_verify_phone_number_multiple_attempts(settings):
     settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
     settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
 
@@ -86,6 +86,7 @@ def test_verify_phone_number_multiple_attempts(settings, verification_code):
     assert 200 == first_response.status_code
     assert 1 == len(User.objects.all())
     assert 1 == len(RefreshToken.objects.all())
+
     second_response = make_request(
         {"phone_number": "+447000000000", "verification_code": "abcd"}
     )
@@ -93,6 +94,24 @@ def test_verify_phone_number_multiple_attempts(settings, verification_code):
     assert b"Invalid verification code" in second_response.content
     assert 1 == len(User.objects.all())
     assert 1 == len(RefreshToken.objects.all())
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("rsa_keys")
+def test_verify_phone_number_existing_user(settings, verification_code):
+    settings.AUTH_ACCESS_TOKEN_AUDIENCE = "audience-url"
+    settings.AUTH_ACCESS_TOKEN_ISSUER = "gatekeeper-url"
+
+    user, _ = get_or_create_user("+447000000000")
+    response = make_request(
+        {"phone_number": "+447000000000", "verification_code": "abcd"}
+    )
+    assert 200 == response.status_code
+    response_data = json.loads(response.content)
+    assert {"refresh_token", "access_token", "expiry_time"} == response_data.keys()
+
+    verification_code.refresh_from_db()
+    assert False is verification_code.is_active
 
 
 def make_request(data):
