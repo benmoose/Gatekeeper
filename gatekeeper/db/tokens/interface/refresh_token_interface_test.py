@@ -9,7 +9,7 @@ from db.user import get_or_create_user
 from ..models import RefreshToken
 from .refresh_token_interface import (
     delete_refresh_token,
-    get_latest_refresh_token_for_user,
+    get_active_refresh_tokens_for_user,
 )
 
 
@@ -25,8 +25,8 @@ def user():
 
 
 @pytest.mark.django_db
-def test_get_latest_refresh_token_for_user(current_time, user):
-    assert None is get_latest_refresh_token_for_user(user)
+def test_get_active_refresh_tokens_for_user(current_time, user):
+    assert [] == get_active_refresh_tokens_for_user(user)
 
     refresh_token_1 = RefreshToken.objects.create(
         user=user,
@@ -37,7 +37,7 @@ def test_get_latest_refresh_token_for_user(current_time, user):
             "jti": "t1",
         },
     )
-    assert refresh_token_1 == get_latest_refresh_token_for_user(user.user_id)
+    assert [refresh_token_1] == get_active_refresh_tokens_for_user(user.user_id)
 
     refresh_token_2 = RefreshToken.objects.create(
         user=user,
@@ -48,7 +48,9 @@ def test_get_latest_refresh_token_for_user(current_time, user):
             "jti": "t2",
         },
     )
-    assert refresh_token_2 == get_latest_refresh_token_for_user(user.user_id)
+    assert {refresh_token_1, refresh_token_2} == set(
+        get_active_refresh_tokens_for_user(user.user_id)
+    )
 
 
 @pytest.mark.django_db

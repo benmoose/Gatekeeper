@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import List, Optional
 
 from common.jwt import REFRESH_TOKEN_TYPE, decode_token
-from db.tokens import get_latest_refresh_token_for_user
+from db.tokens import get_active_refresh_tokens_for_user
 
 
 def get_refresh_token_payload_if_active(refresh_token: str) -> Optional[dict]:
@@ -23,11 +23,12 @@ def is_refresh_token_active(refresh_token_payload: dict) -> bool:
     """
     if refresh_token_payload["typ"] != REFRESH_TOKEN_TYPE:
         return False
-    expected_refresh_token = get_latest_refresh_token_for_user(
-        user_id=refresh_token_payload["sub"]
+    active_refresh_token_ids = get_active_refresh_token_ids_for_user(
+        refresh_token_payload["sub"]
     )
-    if expected_refresh_token is None:
-        return False
-    if refresh_token_payload["jti"] != expected_refresh_token.token_id:
-        return False
-    return True
+    return refresh_token_payload["jti"] in active_refresh_token_ids
+
+
+def get_active_refresh_token_ids_for_user(user_id: str) -> List[str]:
+    active_refresh_tokens = get_active_refresh_tokens_for_user(user_id)
+    return [token.token_payload["jti"] for token in active_refresh_tokens]
