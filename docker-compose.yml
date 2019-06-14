@@ -28,7 +28,7 @@ services:
     volumes:
       - "shared-mount:/var/tmp/shared-mount"
     ports:
-      - "8000:80"
+      - "${SERVICE_PORT:-8000}:80"
     depends_on:
       - server
 
