@@ -15,13 +15,8 @@ def get_user_by_user_id(user_id: str) -> Optional[User]:
         return None
 
 
-def get_or_create_user(
-    phone_number: str, full_name: str = "", short_name: str = "", picture: str = ""
-) -> Tuple[User, bool]:
-    return User.objects.get_or_create(
-        phone_number=phone_number,
-        defaults=dict(full_name=full_name, short_name=short_name, picture=picture),
-    )
+def get_or_create_user(phone_number: str) -> Tuple[User, bool]:
+    return User.objects.get_or_create(phone_number=phone_number)
 
 
 def set_user_as_inactive(user: User):

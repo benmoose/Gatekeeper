@@ -20,9 +20,4 @@ class User(ModelBase):
         primary_key=True, max_length=128, default=generate_user_id
     )
     phone_number = models.CharField(max_length=32, unique=True)
-
-    full_name = models.TextField(blank=True)
-    short_name = models.TextField(blank=True)
-    picture = models.URLField(blank=True)
-
     is_active = models.BooleanField(default=True)
