@@ -6,36 +6,36 @@ set -e
 : ${GATEKEEPER_ECR_REPOSITORY:?}
 
 function pushImage () {
-    [[ ! $# -eq 4 ]] && exit 1
+    [[ ! $# -eq 3 ]] && echo "Expected three arguments." && exit 1
 
     IMAGE_NAME=$1
     DOCKERFILE_PATH=$2
     BUILD_CONTEXT=$3
     shift 3
 
-    GIT_HASH=$(git rev-list HEAD | head -n 1 | cut -c 1-11)
-    GIT_TAG=""${CIRCLE_BRANCH}"."${IMAGE_NAME}"."${GIT_HASH}""
-    LATEST_TAG=""${CIRCLE_BRANCH}"."${IMAGE_NAME}".latest"
+    GIT_HASH=$(git rev-list HEAD | head -n 1 | cut -c 1-14)
+    GIT_TAG=""${GATEKEEPER_ECR_REPOSITORY}":"${CIRCLE_BRANCH}"."${IMAGE_NAME}"."${GIT_HASH}""
+    LATEST_TAG=""${GATEKEEPER_ECR_REPOSITORY}":"${CIRCLE_BRANCH}"."${IMAGE_NAME}".latest"
 
     echo -n "Building "${IMAGE_NAME}" image... "
-    IMAGE_ID=$(docker build -qt ""${ECR_REPOSITORY}":"${GIT_TAG}"" -f ${DOCKERFILE_PATH} ${BUILD_CONTEXT})
+    IMAGE_ID=$(docker build -qt ${GIT_TAG} -f ${DOCKERFILE_PATH} ${BUILD_CONTEXT})
     echo "Done"
 
     echo -n "Tagging image... "
-    docker tag ${IMAGE_ID} ""${ECR_REPOSITORY}":"${LATEST_TAG}""
+    docker tag ${IMAGE_ID} ${LATEST_TAG}
     echo "Done"
 
     echo -n "Pushing image to ECR... "
-    docker push ""${ECR_REPOSITORY}":"${GIT_TAG}""
-    docker push ""${ECR_REPOSITORY}":"${LATEST_TAG}""
+    docker push ${GIT_TAG}
+    docker push ${LATEST_TAG}
     echo "Done"
 }
 
-pushd $(dirname "$0") && cd ..  # Run from project root
+pushd $(dirname "$0") && cd ../..  # Run from Gatekeeper dir
 
-$(aws ecr get-login --no-include-email --region eu-west-1)
+$(aws ecr get-login --no-include-email --region ${AWS_REGION})
 
-pushImage "server" "operations/backend/Dockerfile" "."
+pushImage "server" "operations/django/Dockerfile" "."
 pushImage "nginx" "operations/nginx/Dockerfile" "operations/nginx"
 
 popd

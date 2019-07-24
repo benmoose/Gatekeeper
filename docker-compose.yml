@@ -23,8 +23,7 @@ services:
 
   nginx:
     build:
-      context: .
-      dockerfile: operations/nginx/Dockerfile
+      context: operations/nginx
     volumes:
       - "shared-mount:/var/tmp/shared-mount"
     ports:
