@@ -39,7 +39,7 @@ class TwilioProvider(BaseProvider):
         logger.info(
             f"sending verification SMS to number ending {last_3_digits}: status {result.status}"
         )
-        if result.status in TWILIO_MESSAGE_OK_STATES:
+        if result.status not in TWILIO_MESSAGE_OK_STATES:
             logger.warning(
                 f"sending message to {last_3_digits} failed: {result.error_code} {result.error_message}"
             )
