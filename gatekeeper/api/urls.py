@@ -1,11 +1,11 @@
 from django.urls import path
 
 from .views import (
+    health,
     retrieve_access_token,
     revoke_refresh_token,
     send_verification_code,
     verify_phone_number,
-    health,
 )
 
 urlpatterns = [

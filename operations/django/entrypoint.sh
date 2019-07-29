@@ -8,6 +8,9 @@ echo "DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}"
 
 mkdir -p /var/tmp/shared-mount
 
+# this may need a rethink when multiple servers are running... what if we remove columns?
+./gatekeeper/manage.py migrate --no-input
+
 exec gunicorn -w 1 \
     --threads 1 \
     --timeout 240 \
