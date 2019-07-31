@@ -8,7 +8,7 @@ services:
     environment:
       - "AUTH_PUBLIC_KEY_PATH=/usr/src/app/__fixtures__/public-key.pem"
       - "AUTH_PRIVATE_KEY_PATH=/usr/src/app/__fixtures__/private-key.pem"
-      - "AUTH_ACCESS_TOKEN_AUDIENCE=local-server.audience"
-      - "AUTH_ACCESS_TOKEN_ISSUER=local-server.issuer"
+      - "AUTH_ACCESS_TOKEN_AUDIENCE=staging.molly.ml"
+      - "AUTH_ACCESS_TOKEN_ISSUER=https://staging.mollyapi.ml"
     env_file:
       - .local.env
