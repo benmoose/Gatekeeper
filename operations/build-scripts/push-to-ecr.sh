@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+export DOCKER_BUILDKIT=1
 
 : ${CIRCLE_BRANCH:?}
 : ${GATEKEEPER_ECR_REPOSITORY:?}
