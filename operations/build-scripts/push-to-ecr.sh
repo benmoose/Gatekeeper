@@ -13,7 +13,6 @@ function pushImage () {
     BUILD_CONTEXT=$3
     shift 3
 
-    CIRCLE_BRANCH="master"
     GIT_HASH=$(git rev-list HEAD | head -n 1 | cut -c 1-14)
     GIT_TAG=""${GATEKEEPER_ECR_REPOSITORY}":"${CIRCLE_BRANCH}"."${IMAGE_NAME}"."${GIT_HASH}""
     LATEST_TAG=""${GATEKEEPER_ECR_REPOSITORY}":"${CIRCLE_BRANCH}"."${IMAGE_NAME}".latest"
