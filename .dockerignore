@@ -1,6 +1,11 @@
-env/
-venv/
+.dockerignore
+docker-compose*.yml
+**/.gitignore
 
-dev/
+**/.local.env
+**/dev/
+**/env/
 
-.pytest_cache/
+**/__pycache__/
+**/.pytest_cache
+**/*.pyc
