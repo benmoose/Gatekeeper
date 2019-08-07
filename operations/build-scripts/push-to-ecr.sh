@@ -3,6 +3,7 @@
 set -e
 export DOCKER_BUILDKIT=1
 
+: ${AWS_REGION:?}
 : ${CIRCLE_BRANCH:?}
 : ${GATEKEEPER_ECR_REPOSITORY:?}
 
