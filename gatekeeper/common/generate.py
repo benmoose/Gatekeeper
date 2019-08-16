@@ -1,8 +1,9 @@
 from random import choices
+from typing import Iterable
 from uuid import uuid4
 
 
-def generate_verification_code(population: str, length: int) -> str:
+def generate_verification_code(population: Iterable, length: int) -> str:
     """
     >>> import re
     >>> re.match("^[123]{3}$", generate_verification_code("123", 3)) is not None

@@ -1,9 +1,10 @@
+import logging
 from datetime import datetime, timedelta
 from string import digits
-from typing import Optional, Tuple
+from typing import Iterable, Optional, Tuple
 
 from django.conf import settings
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from phonenumbers import PhoneNumberFormat, format_number, parse
@@ -16,6 +17,8 @@ from common.time import get_current_utc_time
 from coms.providers import get_communication_provider
 from db.models import VerificationCode
 from db.verification import create_verification_code, invalidate_verification_code
+
+logger = logging.getLogger(__name__)
 
 FIVE_MINUTES = 5 * 60
 
@@ -54,11 +57,10 @@ def send_verification_code(request) -> HttpResponse:
         verification_code_length=VERIFICATION_CODE_LENGTH,
         verification_code_expiry_time=verification_code_expiry_time,
         callback=message_status_callback,
-        max_retries=3,
     )
     if success is False:
         invalidate_verification_code(verification_code)
-        return error_response("Failed to send verification token", status=503)
+        return error_response("Failed to send verification SMS", status=503)
 
     return success_response({"phone_number": phone_number})
 
@@ -98,35 +100,53 @@ def send_verification_code_sms(
     provider,
     phone_number: str,
     callback: str,
-    verification_code_population: list,
+    verification_code_population: Iterable,
     verification_code_length: int,
     verification_code_expiry_time: datetime,
-    max_retries: int = 3,
 ) -> Tuple[bool, Optional[VerificationCode]]:
     """
     Attempts to send the verification SMS, whilst handling the generation of duplicate
     verification codes with retries.
     """
-    retry_count = 0
-    while retry_count <= max_retries:
+    verification_code = create_verification_code_with_retries(
+        phone_number=phone_number,
+        verification_code_population=verification_code_population,
+        verification_code_length=verification_code_length,
+        verification_code_expiry_time=verification_code_expiry_time,
+        max_retries=5,
+    )
+    verification_message = get_verification_code_sms_message(verification_code.code)
+    success = provider.send_sms(phone_number, verification_message, callback)
+    return success, verification_code
+
+
+def create_verification_code_with_retries(
+    phone_number: str,
+    verification_code_population: Iterable,
+    verification_code_length: int,
+    verification_code_expiry_time: datetime,
+    max_retries: int,
+) -> VerificationCode:
+    for retry_count in range(max_retries):
         try:
-            with transaction.atomic():
-                code = generate_verification_code(
-                    verification_code_population, verification_code_length
-                )
-                verification_code = create_verification_code(
-                    phone_number, code, verification_code_expiry_time
-                )
+            code = generate_verification_code(
+                verification_code_population, verification_code_length
+            )
+            return create_verification_code(
+                phone_number, code, verification_code_expiry_time
+            )
         except IntegrityError:
-            retry_count += 1
-            continue
+            logger.warning(
+                "Got integrity error when inserting verification code into DB, attempt"
+                "%d of %d",
+                retry_count + 1,
+                max_retries,
+            )
 
-        verification_message = get_verification_code_message(verification_code.code)
-        success = provider.send_sms(phone_number, verification_message, callback)
-        return success, verification_code
-
-    return False, None
+    raise RuntimeError(
+        f"Failed to generate unique verification code after {max_retries} attempts"
+    )
 
 
-def get_verification_code_message(verification_code: str) -> str:
+def get_verification_code_sms_message(verification_code: str) -> str:
     return f"Your verification code is {verification_code}"
