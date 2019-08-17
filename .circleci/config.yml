@@ -3,24 +3,22 @@ version: 2.1
 jobs:
   gatekeeper_test:
     docker:
-      - image: circleci/python:3
+      - image: benmoose/gatekeeper-builder
     steps:
       - checkout
-      - setup_remote_docker
-      - run:
-          name: Build images
-          command: |
-            docker-compose build
+#      - setup_remote_docker
+#      - run:
+#          name: Build images
+#          command: |
+#            docker-compose build
       - run:
           name: Check code style
           command: |
-            docker-compose -f docker-compose.yml \
-              run --rm --no-deps --entrypoint ./run-linter.sh server --check
+            ./run-linter.sh --check
       - run:
           name: Run tests
           command: |
-            docker-compose -f docker-compose.yml \
-              run --rm --entrypoint ./run-tests.sh server
+            ./run-tests.sh -vv
 
 workflows:
   version: 2
