@@ -2,9 +2,13 @@
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-Gatekeeper is Andromeda's authentication server.
+Gatekeeper is lightweight JWT-based authentication server for passwordless SMS phone
+verification.
+Users signup to your service by entering an SMS code, generating an access token which
+can be verified by your application without requiring database lookups.
+Persistent sessions are supported with refresh tokens.
 
-#### Quickstart
+#### Contributing
 
 Docker is recommended for local development.
 
