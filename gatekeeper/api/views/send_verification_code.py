@@ -59,7 +59,7 @@ def send_verification_code(request) -> HttpResponse:
         callback=message_status_callback,
     )
     if success is False:
-        invalidate_verification_code(verification_code)
+        invalidate_verification_code(verification_code.code)
         return error_response("Failed to send verification SMS", status=503)
 
     return success_response({"phone_number": phone_number})

@@ -57,9 +57,23 @@ def test_send_verification_code_makes_request(settings, mock_provider):
     assert "/callback/" == callback
 
     assert 1 == len(VerificationCode.objects.all())
-    verification_code = VerificationCode.objects.first()
+    verification_code = VerificationCode.objects.all().first()
     assert "+447000000000" == verification_code.phone_number
     assert verification_code.is_active
+
+
+@pytest.mark.django_db
+def test_send_verification_code_invalidates_code_if_provider_fails_to_send_sms(
+    mock_provider
+):
+    mock_provider.start_failing()
+    response = make_request({"phone_number": "07000000000", "region": "gb"})
+
+    assert 503 == response.status_code
+    assert b'{"message": "Failed to send verification SMS"}' == response.content
+
+    assert 1 == VerificationCode.objects.all().count()
+    assert False is VerificationCode.objects.all().first().is_active
 
 
 @pytest.mark.django_db
