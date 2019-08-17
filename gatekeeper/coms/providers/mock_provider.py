@@ -6,6 +6,7 @@ MOCK_PROVIDER_ID = "mock-provider"
 class MockProvider(BaseProvider):
     def __init__(self):
         self.send_sms_attempts = []
+        self.should_succeed = True
 
     @classmethod
     def get_provider(cls) -> "MockProvider":
@@ -16,10 +17,17 @@ class MockProvider(BaseProvider):
 
     def send_sms(self, to_number: str, message: str, status_callback: str) -> bool:
         self.send_sms_attempts.append((to_number, message, status_callback))
-        return True
+        return self.should_succeed
+
+    def start_failing(self):
+        self.should_succeed = False
+
+    def stop_failing(self):
+        self.should_succeed = True
 
     def reset(self):
         self.send_sms_attempts = []
+        self.should_succeed = True
 
 
 MOCK_PROVIDER = MockProvider()
