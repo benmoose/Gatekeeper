@@ -1,0 +1,29 @@
+version: 2.1
+
+jobs:
+  gatekeeper_test:
+    docker:
+      - image: circleci/python:3
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build images
+          command: |
+            docker-compose build
+      - run:
+          name: Check code style
+          command: |
+            docker-compose -f docker-compose.yml \
+              run --rm --no-deps --entrypoint ./run-linter.sh server --check
+      - run:
+          name: Run tests
+          command: |
+            docker-compose -f docker-compose.yml \
+              run --rm --entrypoint ./run-tests.sh server
+
+workflows:
+  version: 2
+  gatekeeper_pipeline:
+    jobs:
+      - gatekeeper_test
