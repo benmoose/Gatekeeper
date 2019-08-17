@@ -12,7 +12,6 @@ services:
     volumes:
       - "shared-mount:/var/tmp/shared-mount"
     environment:
-      - "DJANGO_SETTINGS_MODULE=django_conf.settings"
       - "ENVIRONMENT=development"
       - "DB_NAME=postgres"
       - "DB_USER=postgres"
