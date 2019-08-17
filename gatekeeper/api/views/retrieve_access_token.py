@@ -25,6 +25,9 @@ class ResponseData:
 
 @require_POST
 def retrieve_access_token(request):
+    """
+    Generates and returns a new access token, given a valid refresh token.
+    """
     request_data = get_request_data(request.body)
     if request_data is None:
         return error_response("Invalid or missing fields in request body")

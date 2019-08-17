@@ -39,6 +39,13 @@ class ResponseData:
 
 @require_POST
 def verify_phone_number(request):
+    """
+    Given a phone number (e.164 format) and an active verification code, this endpoint
+    generates a new user account capable of owning access and refresh tokens.
+
+    An initial set of refresh and access tokens for the new account are returned on
+    success.
+    """
     request_data = get_request_data(request.body)
     if request_data is None:
         return error_response("Missing or invalid data")

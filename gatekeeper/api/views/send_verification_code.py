@@ -35,6 +35,11 @@ class RequestData:
 
 @require_POST
 def send_verification_code(request) -> HttpResponse:
+    """
+    Validates, formats and requests an SMS from the configured provider.
+    The requested phone_number received a temporary verification code which should be
+    supplied to the verify_phone_number endpoint.
+    """
     request_data = get_request_data(request.body)
     if request_data is None:
         return error_response()
