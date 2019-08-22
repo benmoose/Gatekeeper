@@ -70,7 +70,10 @@ for setting_name in SETTINGS_FROM_ENVIRONMENT:
 
 for setting_name in SETTINGS_FROM_ENVIRONMENT:
     if vars()[setting_name] is None:
-        logger.warning(f"Missing setting {setting_name}: set with environment variable")
+        logger.warning(
+            f"{setting_name} has not been configured, "
+            f"you can set it with an environment variable"
+        )
 
 
 if ENVIRONMENT not in ALLOWED_ENVIRONMENTS:
